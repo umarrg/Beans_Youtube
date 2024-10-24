@@ -8,14 +8,9 @@ const app = express();
 
 const bot = new TelegramBot(process.env.TOKEN, { polling: true });
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-let TELEGRAM_CHANNEL_ID = null;
 const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 
-bot.setMyCommands([
-    { command: '/start', description: 'Start the bot and get welcome message' },
-
-
-]);
+let userChatIds = [];
 let lastVideoId = null;
 
 async function getLatestYouTubeVideo() {
@@ -44,7 +39,10 @@ async function forwardLatestVideo() {
 
     if (video && video.id !== lastVideoId) {
         const message = `📹 New Video Posted: *${video.title}*\nWatch here: ${video.url}`;
-        bot.sendMessage(TELEGRAM_CHANNEL_ID, message, { parse_mode: 'Markdown' });
+
+        userChatIds.forEach(chatId => {
+            bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        });
 
         lastVideoId = video.id;
         console.log(`Forwarded video: ${video.title}`);
@@ -61,19 +59,24 @@ const videoCheckJob = new cron.CronJob('*/5 * * * *', () => {
 videoCheckJob.start();
 
 bot.onText(/\/start/, (msg) => {
-
     const chatId = msg.chat.id;
-    TELEGRAM_CHANNEL_ID = chatId;
 
-    bot.sendMessage(chatId, "Welcome to the YouTube Forwarder Bot! This bot automatically forwards new videos from the YouTube channel to this Telegram group.");
+    if (!userChatIds.includes(chatId)) {
+        userChatIds.push(chatId);
+        console.log(`Saved new user with chatId: ${chatId}`);
+    }
+
+    bot.sendMessage(chatId, "Welcome to the YouTube Forwarder Bot! This bot automatically forwards new videos from the YouTube channel to this Telegram chat.");
 });
 
 bot.on('polling_error', (error) => {
     console.log(`Polling error: ${error.code}`);
 });
+
 bot.on('message', (msg) => {
     console.log(msg);
 });
+
 app.get('/', (req, res) => {
     res.send('YouTube Forwarder Bot is running');
 });
@@ -82,4 +85,3 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
