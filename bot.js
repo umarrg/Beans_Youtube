@@ -12,7 +12,7 @@ app.use(bodyParser.text({ type: 'application/atom+xml' }));
 
 const bot = new TelegramBot(process.env.TOKEN, { polling: true });
 const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
-const CALLBACK_URL = 'https://995f-197-211-58-96.ngrok-free.app/notifications';
+const CALLBACK_URL = 'https://beans-youtube.onrender.com/notifications';
 
 let userChatIds = [];
 
